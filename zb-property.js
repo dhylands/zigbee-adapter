@@ -267,6 +267,23 @@ class ZigbeeProperty extends Property {
     return [power, '' + power];
   }
 
+  parseTemperatureMeasurementAttr(attrEntry) {
+    if (!this.hasOwnProperty('minimum')) {
+      let minTempProperty = this.device.findProperty('_minTemp');
+      if (minTempProperty && minTempProperty.value) {
+        this.minimum = minTempProperty.value / 100;
+      }
+    }
+    if (!this.hasOwnProperty('maximum')) {
+      let maxTempProperty = this.device.findProperty('_maxTemp');
+      if (maxTempProperty && maxTempProperty.value) {
+        this.maximum = maxTempProperty.value / 100;
+      }
+    }
+    const temperature = attrEntry.attrData / 100;
+    return [temperature, temperature.toFixed(2)];
+  }
+
   /**
    * @method parseNumericAttr
    *
@@ -275,6 +292,43 @@ class ZigbeeProperty extends Property {
   parseNumericAttr(attrEntry) {
     let value = attrEntry.attrData;
     return [value, '' + value];
+  }
+
+  /**
+   * @method parseOccupiedAttr
+   *
+   * Converts the ZCL 'occupied' attribute (a bit field) into the 'occupied'
+   * property (a boolean).
+   */
+  parseOccupiedAttr(attrEntry) {
+    let propertyValue = attrEntry.attrData != 0;
+    return [
+      propertyValue,
+      (propertyValue ? 'occupied'
+                     : 'not occupied') + ` (${attrEntry.attrData})`
+    ];
+  }
+
+  /**
+   * @method parseOccupancySensorTypeAttr
+   *
+   * Converts the ZCL 'occupied' attribute (a bit field) into the 'occupied'
+   * property (a boolean).
+   */
+  parseOccupancySensorTypeAttr(attrEntry) {
+    let type = 'unknown';
+    switch (attrEntry.attrData) {
+      case 0:
+        type = 'PIR';
+        break;
+      case 1:
+        type = 'ultrasonic';
+        break;
+      case 2:
+        type = 'PIR+ultrasonic';
+        break;
+    }
+    return [type, type + ` (${attrEntry.attrData})`];
   }
 
   /**

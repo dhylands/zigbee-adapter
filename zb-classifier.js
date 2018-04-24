@@ -38,6 +38,11 @@ const CLUSTER_ID_HAELECTRICAL_HEX = utils.hexStr(CLUSTER_ID_HAELECTRICAL, 4);
 const CLUSTER_ID_LIGHTINGCOLORCTRL = zclId.cluster('lightingColorCtrl').value;
 const CLUSTER_ID_LIGHTLINK = zclId.cluster('lightLink').value;
 const CLUSTER_ID_LIGHTLINK_HEX = utils.hexStr(CLUSTER_ID_LIGHTLINK, 4);
+const CLUSTER_ID_OCCUPANCY_SENSOR = zclId.cluster('msOccupancySensing').value;
+const CLUSTER_ID_OCCUPANCY_SENSOR_HEX =
+  utils.hexStr(CLUSTER_ID_OCCUPANCY_SENSOR, 4);
+const CLUSTER_ID_TEMPERATURE = zclId.cluster('msTemperatureMeasurement').value;
+const CLUSTER_ID_TEMPERATURE_HEX = utils.hexStr(CLUSTER_ID_TEMPERATURE, 4);
 const CLUSTER_ID_SEMETERING = zclId.cluster('seMetering').value;
 const CLUSTER_ID_SEMETERING_HEX = utils.hexStr(CLUSTER_ID_SEMETERING, 4);
 
@@ -284,6 +289,77 @@ class ZigbeeClassifier {
     );
   }
 
+  addOccupancySensorProperty(node, msOccupancySensingEndpoint) {
+    this.addProperty(
+      node,                           // device
+      'occupied',                     // name
+      {                               // property description
+        type: 'boolean',
+      },
+      ZHA_PROFILE_ID,                 // profileId
+      msOccupancySensingEndpoint,     // endpoint
+      CLUSTER_ID_OCCUPANCY_SENSOR,    // clusterId
+      'occupancy',                    // attr
+      '',                             // setAttrFromValue
+      'parseOccupiedAttr'             // parseValueFromAttr
+    );
+    this.addProperty(
+      node,                           // device
+      'sensorType',                   // name
+      {                               // property description
+        type: 'string',
+      },
+      ZHA_PROFILE_ID,                 // profileId
+      msOccupancySensingEndpoint,     // endpoint
+      CLUSTER_ID_OCCUPANCY_SENSOR,    // clusterId
+      'occupancySensorType',          // attr
+      '',                             // setAttrFromValue
+      'parseOccupancySensorTypeAttr'  // parseValueFromAttr
+    );
+  }
+
+  addTemperatureSensorProperty(node, msTemperatureEndpoint) {
+    this.addProperty(
+      node,                           // device
+      '_minTemp',                     // name
+      {                               // property description
+        type: 'number',
+      },
+      ZHA_PROFILE_ID,                 // profileId
+      msTemperatureEndpoint,          // endpoint
+      CLUSTER_ID_TEMPERATURE,         // clusterId
+      'minMeasuredValue',             // attr
+      '',                             // setAttrFromValue
+      'parseNumericAttr'              // parseValueFromAttr
+    );
+    this.addProperty(
+      node,                           // device
+      '_maxTemp',                     // name
+      {                               // property description
+        type: 'number',
+      },
+      ZHA_PROFILE_ID,                 // profileId
+      msTemperatureEndpoint,          // endpoint
+      CLUSTER_ID_TEMPERATURE,         // clusterId
+      'maxMeasuredValue',             // attr
+      '',                             // setAttrFromValue
+      'parseNumericAttr'              // parseValueFromAttr
+    );
+    this.addProperty(
+      node,                           // device
+      'temperature',                  // name
+      {                               // property description
+        type: 'number',
+      },
+      ZHA_PROFILE_ID,                 // profileId
+      msTemperatureEndpoint,          // endpoint
+      CLUSTER_ID_TEMPERATURE,         // clusterId
+      'measuredValue',                // attr
+      '',                             // setAttrFromValue
+      'parseTemperatureMeasurementAttr' // parseValueFromAttr
+    );
+  }
+
   addProperty(node, name, descr, profileId, endpoint, clusterId,
               attr, setAttrFromValue, parseValueFromAttr) {
     let property =  new ZigbeeProperty(node, name, descr, profileId,
@@ -317,15 +393,29 @@ class ZigbeeClassifier {
       node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_GENONOFF_HEX);
     let genOnOffOutputEndpoint =
       node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID_GENONOFF_HEX);
+    let msOccupancySensingEndpoint =
+      node.findZhaEndpointWithInputClusterIdHex(
+        CLUSTER_ID_OCCUPANCY_SENSOR_HEX);
+    let msTemperatureEndpoint =
+      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_TEMPERATURE_HEX);
 
     if (DEBUG) {
       console.log('---- Zigbee classifier -----');
-      console.log('    seMeteringEndpoint =', seMeteringEndpoint);
-      console.log('  haElectricalEndpoint =', haElectricalEndpoint);
-      console.log('  genLevelCtrlEndpoint =', genLevelCtrlEndpoint);
-      console.log('      genOnOffEndpoint =', genOnOffEndpoint);
-      console.log('genOnOffOutputEndpoint =', genOnOffOutputEndpoint);
-      console.log('     colorCapabilities =', node.colorCapabilities);
+      console.log('        seMeteringEndpoint =', seMeteringEndpoint);
+      console.log('      haElectricalEndpoint =', haElectricalEndpoint);
+      console.log('      genLevelCtrlEndpoint =', genLevelCtrlEndpoint);
+      console.log('          genOnOffEndpoint =', genOnOffEndpoint);
+      console.log('    genOnOffOutputEndpoint =', genOnOffOutputEndpoint);
+      console.log('         colorCapabilities =', node.colorCapabilities);
+      console.log('msOccupancySensingEndpoint =', msOccupancySensingEndpoint);
+      console.log('     msTemperatureEndpoint =', msTemperatureEndpoint);
+    }
+
+    if (msOccupancySensingEndpoint) {
+      this.addOccupancySensorProperty(node, msOccupancySensingEndpoint);
+    }
+    if (msTemperatureEndpoint) {
+      this.addTemperatureSensorProperty(node, msTemperatureEndpoint);
     }
 
     if (haElectricalEndpoint) {
@@ -356,6 +446,8 @@ class ZigbeeClassifier {
     if (node.isCoordinator) {
       return;
     }
+
+    node.type = 'thing'; // Replace with THING_TYPE_THING
 
     this.classifyInternal(node);
     DEBUG && console.log('Initialized as', node.type);
