@@ -29,6 +29,8 @@ try {
 
 const ZHA_PROFILE_ID = zclId.profile('HA').value;
 
+const CLUSTER_ID_GENALARMS = zclId.cluster('genAlarms').value;
+const CLUSTER_ID_GENALARMS_HEX = utils.hexStr(CLUSTER_ID_GENALARMS, 4);
 const CLUSTER_ID_GENBINARYINPUT = zclId.cluster('genBinaryInput').value;
 const CLUSTER_ID_GENBINARYINPUT_HEX =
   utils.hexStr(CLUSTER_ID_GENBINARYINPUT, 4);
@@ -81,6 +83,22 @@ class ZigbeeClassifier {
 
   prependFrames(frames) {
     this.frames = frames.concat(this.frames);
+  }
+
+  addAlarmProperty(node, genAlarmsEndpoint) {
+    this.addProperty(
+      node,                           // device
+      'on',                           // name
+      {                               // property description
+        type: 'boolean',
+      },
+      ZHA_PROFILE_ID,                 // profileId
+      genAlarmsEndpoint,              // endpoint
+      CLUSTER_ID_GENALARMS,           // clusterId
+      'alarmCount',                   // attr
+      '',                             // setAttrFromValue
+      'parseNumericAttr'              // parseValueFromAttr
+    );
   }
 
   addColorProperty(node, lightingColorCtrlEndpoint) {
@@ -456,6 +474,8 @@ class ZigbeeClassifier {
         CLUSTER_ID_OCCUPANCY_SENSOR_HEX);
     const msTemperatureEndpoint =
       node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_TEMPERATURE_HEX);
+    const genAlarmsEndpoint =
+      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_GENALARMS_HEX);
 
     if (DEBUG) {
       console.log('---- Zigbee classifier -----');
@@ -468,6 +488,7 @@ class ZigbeeClassifier {
       console.log('     colorCapabilities =', node.colorCapabilities);
       console.log('msOccupancySensingEndpoint =', msOccupancySensingEndpoint);
       console.log('     msTemperatureEndpoint =', msTemperatureEndpoint);
+      console.log('         genAlarmsEndpoint =', genAlarmsEndpoint);
       console.log('                  zoneType =', node.zoneType);
     }
 
@@ -496,6 +517,10 @@ class ZigbeeClassifier {
       this.initOnOffSwitch(node, genOnOffEndpoint);
       return;
     }
+    if (genAlarmsEndpoint) {
+      this.initAlarm(node, genAlarmsEndpoint);
+      return;
+    }
     if (genBinaryInputEndpoint) {
       this.initBinarySensor(node, genBinaryInputEndpoint);
       // return;
@@ -520,6 +545,11 @@ class ZigbeeClassifier {
     if (!node.name) {
       node.name = node.defaultName;
     }
+  }
+
+  initAlarm(node, genAlarmsEndpoint) {
+    node.type = Constants.THING_TYPE_BINARY_SENSOR;
+    this.addAlarmProperty(node, genAlarmsEndpoint);
   }
 
   initBinarySensor(node, endpointNum) {

@@ -158,11 +158,11 @@ class ZigbeeAdapter extends Adapter {
 
     // debugFrames causes a 1-line summary to be printed for each frame
     // which is sent or received.
-    this.debugFrames = false;
+    this.debugFrames = true;
 
     // debugFrameDetail causes detailed information about each frame to be
     // printed.
-    this.debugDumpFrameDetail = false;
+    this.debugDumpFrameDetail = true;
 
     // Use debugFlow if you need to debug the flow of the program. This causes
     // prints at the beginning of many functions to print some info.
