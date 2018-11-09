@@ -551,20 +551,23 @@ class ZigbeeNode extends Device {
     }
 
     const clusterId = parseInt(frame.clusterId, 16);
-    const clusterIdStr = zclId.cluster(clusterId).key;
-    let attrInfo;
-    if (SKIP_DISCOVER_READ_CLUSTERS.includes(clusterIdStr)) {
-      // This is a cluster which dosen't seem to respond to read requests.
-      // Just print the attributes.
-      for (attrInfo of payload.attrInfos) {
-        const attr = zclId.attr(clusterId, attrInfo.attrId);
-        const attrStr = attr ? attr.key : 'unknown';
-        const dataType = zclId.dataType(attrInfo.dataType);
-        const dataTypeStr = dataType ? dataType.key : 'unknown';
-        console.log('      AttrId:', `${attrStr} (${attrInfo.attrId})`,
-                    'dataType:', `${dataTypeStr} (${attrInfo.dataType})`);
+    const cluster = zclId.cluster(clusterId);
+    if (cluster) {
+      const clusterIdStr = cluster.key;
+      let attrInfo;
+      if (SKIP_DISCOVER_READ_CLUSTERS.includes(clusterIdStr)) {
+        // This is a cluster which dosen't seem to respond to read requests.
+        // Just print the attributes.
+        for (attrInfo of payload.attrInfos) {
+          const attr = zclId.attr(clusterId, attrInfo.attrId);
+          const attrStr = attr ? attr.key : 'unknown';
+          const dataType = zclId.dataType(attrInfo.dataType);
+          const dataTypeStr = dataType ? dataType.key : 'unknown';
+          console.log('      AttrId:', `${attrStr} (${attrInfo.attrId})`,
+                      'dataType:', `${dataTypeStr} (${attrInfo.dataType})`);
+        }
+        return;
       }
-      return;
     }
 
     // Read the values of all of the attributes. We put this after

@@ -943,7 +943,7 @@ class ZigbeeAdapter extends Adapter {
   handleExplicitRx(frame) {
     const node = this.nodes[frame.remote64];
     if (node && node.addr16 != frame.remote16) {
-      node.addr16 = frame.renote16;
+      node.addr16 = frame.remote16;
       this.saveDeviceInfoDeferred();
     }
     if (this.zdo.isZdoFrame(frame)) {
